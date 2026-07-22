@@ -11,7 +11,7 @@ Requires Neovim >= 0.10 (`vim.system`). `git` and (optionally) `ripgrep` on PATH
 
 ```lua
 {
-  "you/workflow-assistant.nvim",
+  "TimboGP/workflow-assistant.nvim",
   event = "VeryLazy",
   opts = {
     -- everything here is optional; see lua/workflow-assistant/config.lua
