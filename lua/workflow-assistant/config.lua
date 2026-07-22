@@ -58,6 +58,9 @@ M.defaults = {
     patterns = { "TODO", "FIXME", "HACK", "XXX" },
     threshold = 1,
   },
+  reminders = {
+    scan_interval = 30, -- how often the ad-hoc reminders scanner checks for due reminders
+  },
 
   -- User-supplied rule specs (see README). Registered after built-ins.
   custom_rules = {},

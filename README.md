@@ -35,8 +35,28 @@ Or manually: `require("workflow-assistant").setup({ ... })`.
 :WorkflowAssistant snooze <rule> [minutes]
 :WorkflowAssistant reset [rule]   -- clear fired/snooze state (all if omitted)
 :WorkflowAssistant tested         -- reset the "writes since tests" counter
+:WorkflowAssistant remind <duration> <message...>  -- e.g. remind 30m stand up
+:WorkflowAssistant reminders      -- list pending ad-hoc reminders
+:WorkflowAssistant unremind <id>  -- cancel a pending reminder
 :checkhealth workflow-assistant
 ```
+
+## Ad-hoc reminders
+
+One-shot timed reminders that persist across restarts (`<duration>` is e.g.
+`30m`, `2h`, `90s`, `1d`):
+
+```
+:WorkflowAssistant remind 30m Stand up and stretch
+:WorkflowAssistant reminders
+:WorkflowAssistant unremind <id>
+```
+
+Or from Lua: `require("workflow-assistant").remind("2h", "check the deploy")`.
+A reminder's custom `actions` (see `reminders.add` in
+`lua/workflow-assistant/reminders.lua`) only apply within the session that
+created it — they're closures and can't be persisted to disk, so a reminder
+that outlives a restart falls back to a plain notification.
 
 ## Built-in rules
 

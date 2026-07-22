@@ -1,8 +1,10 @@
 -- Per-rule runtime state: last_fired (notified), snoozed_until.
 -- last_checked is kept in memory only (not persisted) to avoid disk churn.
+-- Also holds the persisted ad-hoc reminders list (see reminders.lua).
 local M = {}
 
 M._data = {} -- name -> { last_fired, snoozed_until }  (persisted)
+M._reminders = {} -- list of { id, due, message }        (persisted)
 M._mem = {} -- name -> { last_checked }               (in-memory)
 M._cfg = nil
 
@@ -27,14 +29,22 @@ function M.load()
   local content = fd:read("*a")
   fd:close()
   local ok, decoded = pcall(vim.json.decode, content)
-  if ok and type(decoded) == "table" then M._data = decoded end
+  if not (ok and type(decoded) == "table") then return end
+  if decoded.rules ~= nil or decoded.reminders ~= nil then
+    M._data = decoded.rules or {}
+    M._reminders = decoded.reminders or {}
+  else
+    -- Legacy flat format (pre-reminders): the whole table is rule data.
+    M._data = decoded
+    M._reminders = {}
+  end
 end
 
 function M.save()
   if not (M._cfg and M._cfg.state.persist) then return end
   local path = M._cfg.state.path
   vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
-  local ok, encoded = pcall(vim.json.encode, M._data)
+  local ok, encoded = pcall(vim.json.encode, { rules = M._data, reminders = M._reminders })
   if not ok then return end
   local fd = io.open(path, "w")
   if not fd then return end
@@ -74,6 +84,26 @@ function M.can_fire(rule)
   local last = M.last_fired(rule.name)
   if last and (os.time() - last) < rule.cooldown then return false end
   return true
+end
+
+-- Ad-hoc reminders (persisted) ---------------------------------------------
+function M.list_reminders() return M._reminders end
+
+function M.add_reminder(reminder)
+  M._reminders[#M._reminders + 1] = reminder
+  M.save()
+end
+
+--- Returns true if a reminder with this id was found and removed.
+function M.remove_reminder(id)
+  for i, r in ipairs(M._reminders) do
+    if r.id == id then
+      table.remove(M._reminders, i)
+      M.save()
+      return true
+    end
+  end
+  return false
 end
 
 function M.reset(name)

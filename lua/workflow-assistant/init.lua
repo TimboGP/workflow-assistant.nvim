@@ -8,6 +8,7 @@ local engine = require("workflow-assistant.engine")
 local triggers = require("workflow-assistant.triggers")
 local commands = require("workflow-assistant.commands")
 local builtins = require("workflow-assistant.rules")
+local reminders = require("workflow-assistant.reminders")
 
 M.config = nil
 
@@ -27,6 +28,7 @@ function M.setup(opts)
   end
 
   triggers.setup(cfg)
+  reminders.setup(cfg)
   commands.setup(M)
 end
 
@@ -82,6 +84,50 @@ function M.show_list()
   for _, r in ipairs(engine.list()) do
     lines[#lines + 1] =
       string.format("  %-22s [%s]%s %s", r.name, r.trigger, r.enabled and "" or " (off)", r.desc)
+  end
+  actions.notify(table.concat(lines, "\n"))
+end
+
+--- Set an ad-hoc reminder due after `duration_str` (e.g. "30m", "2h", "90s",
+--- "1d"). Returns the reminder id, or nil if the duration is invalid.
+function M.remind(duration_str, message)
+  local secs, err = reminders.parse_duration(duration_str)
+  if not secs then
+    actions.notify("Invalid duration: " .. err, vim.log.levels.ERROR)
+    return nil
+  end
+  local id = reminders.add({ in_seconds = secs, message = message })
+  actions.notify(("Reminder set for %s: %s"):format(duration_str, message))
+  return id
+end
+
+function M.unremind(id)
+  if reminders.remove(id) then
+    actions.notify("Reminder cancelled.")
+  else
+    actions.notify("No such reminder: " .. tostring(id), vim.log.levels.WARN)
+  end
+end
+
+function M.reminder_ids()
+  local ids = {}
+  for _, r in ipairs(reminders.list()) do
+    ids[#ids + 1] = r.id
+  end
+  return ids
+end
+
+function M.show_reminders()
+  local list = reminders.list()
+  if #list == 0 then
+    actions.notify("No pending reminders.")
+    return
+  end
+  local now = os.time()
+  local lines = { "Pending reminders:" }
+  for _, r in ipairs(list) do
+    local remaining = math.max(0, r.due - now)
+    lines[#lines + 1] = ("  [%s] in %ds — %s"):format(r.id, remaining, r.message)
   end
   actions.notify(table.concat(lines, "\n"))
 end

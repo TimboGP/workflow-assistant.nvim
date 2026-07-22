@@ -11,6 +11,9 @@ local SUBS = {
   "reset",
   "status",
   "tested",
+  "remind",
+  "reminders",
+  "unremind",
 }
 
 function M.setup(api)
@@ -41,6 +44,22 @@ function M.setup(api)
       if name then api.snooze(name, mins * 60) end
     elseif sub == "reset" then
       api.reset(a[2]) -- nil resets everything
+    elseif sub == "remind" then
+      local duration = a[2]
+      local words = {}
+      for i = 3, #a do
+        words[#words + 1] = a[i]
+      end
+      local message = table.concat(words, " ")
+      if not duration or message == "" then
+        vim.notify("Usage: WorkflowAssistant remind <duration> <message>", vim.log.levels.WARN)
+      else
+        api.remind(duration, message)
+      end
+    elseif sub == "reminders" then
+      api.show_reminders()
+    elseif sub == "unremind" then
+      api.unremind(a[2])
     else
       vim.notify("WorkflowAssistant: " .. table.concat(SUBS, "|"), vim.log.levels.WARN)
     end
@@ -56,6 +75,8 @@ function M.setup(api)
       end
       -- Completing a rule name for check/snooze/reset.
       if vim.tbl_contains({ "check", "snooze", "reset" }, parts[2]) then return api.rule_names() end
+      -- Completing a reminder id for unremind.
+      if parts[2] == "unremind" then return api.reminder_ids() end
       return {}
     end,
   })
