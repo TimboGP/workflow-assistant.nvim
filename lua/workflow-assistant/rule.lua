@@ -21,12 +21,20 @@ local M = {}
 function M.normalize(spec, cfg)
   assert(type(spec) == "table", "rule must be a table")
   assert(type(spec.name) == "string" and spec.name ~= "", "rule.name (string) required")
-  assert(type(spec.condition) == "function", "rule.condition (function) required for " .. tostring(spec.name))
-  assert(type(spec.action) == "function", "rule.action (function) required for " .. tostring(spec.name))
+  assert(
+    type(spec.condition) == "function",
+    "rule.condition (function) required for " .. tostring(spec.name)
+  )
+  assert(
+    type(spec.action) == "function",
+    "rule.action (function) required for " .. tostring(spec.name)
+  )
 
   local trigger = spec.trigger or "timer"
-  assert(trigger == "timer" or trigger == "event" or trigger == "manual",
-    "rule.trigger must be 'timer'|'event'|'manual' for " .. spec.name)
+  assert(
+    trigger == "timer" or trigger == "event" or trigger == "manual",
+    "rule.trigger must be 'timer'|'event'|'manual' for " .. spec.name
+  )
 
   local rule = {
     name = spec.name,

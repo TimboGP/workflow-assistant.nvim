@@ -2,8 +2,8 @@
 -- last_checked is kept in memory only (not persisted) to avoid disk churn.
 local M = {}
 
-M._data = {}  -- name -> { last_fired, snoozed_until }  (persisted)
-M._mem = {}   -- name -> { last_checked }               (in-memory)
+M._data = {} -- name -> { last_fired, snoozed_until }  (persisted)
+M._mem = {} -- name -> { last_checked }               (in-memory)
 M._cfg = nil
 
 local function entry(name)
@@ -44,7 +44,10 @@ end
 
 -- Notification bookkeeping (persisted) ------------------------------------
 function M.last_fired(name) return entry(name).last_fired end
-function M.mark_fired(name) entry(name).last_fired = os.time(); M.save() end
+function M.mark_fired(name)
+  entry(name).last_fired = os.time()
+  M.save()
+end
 
 function M.snooze(name, seconds)
   entry(name).snoozed_until = os.time() + seconds

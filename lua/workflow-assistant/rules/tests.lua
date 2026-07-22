@@ -7,9 +7,7 @@ local actions = require("workflow-assistant.actions")
 local M = {}
 M._writes_since_test = 0
 
-function M.mark_tested()
-  M._writes_since_test = 0
-end
+function M.mark_tested() M._writes_since_test = 0 end
 
 function M.rules(cfg)
   local src_ft = cfg.tests.filetypes
@@ -52,15 +50,16 @@ function M.rules(cfg)
               actions.run_cmd(ctx.root, test_cmd, function(res)
                 M.mark_tested()
                 local okt = res.code == 0
-                actions.notify(okt and "Tests passed." or "Tests failed — check output.",
-                  okt and vim.log.levels.INFO or vim.log.levels.ERROR)
+                actions.notify(
+                  okt and "Tests passed." or "Tests failed — check output.",
+                  okt and vim.log.levels.INFO or vim.log.levels.ERROR
+                )
               end)
             end,
           }
         end
         choices[#choices + 1] = { label = "Mark as tested", run = M.mark_tested }
-        actions.prompt(rule,
-          ("%d writes since tests last ran"):format(payload.writes), choices)
+        actions.prompt(rule, ("%d writes since tests last ran"):format(payload.writes), choices)
       end,
     },
   }

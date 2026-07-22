@@ -4,8 +4,8 @@ local rule_mod = require("workflow-assistant.rule")
 local context = require("workflow-assistant.context")
 local state = require("workflow-assistant.state")
 
-M._rules = {}      -- name -> rule
-M._order = {}      -- names, registration order
+M._rules = {} -- name -> rule
+M._order = {} -- names, registration order
 M._evaluating = {} -- name -> true while an async condition is in flight
 M._cfg = nil
 
@@ -16,9 +16,7 @@ end
 
 function M.register(spec)
   local rule = rule_mod.normalize(spec, M._cfg)
-  if not M._rules[rule.name] then
-    M._order[#M._order + 1] = rule.name
-  end
+  if not M._rules[rule.name] then M._order[#M._order + 1] = rule.name end
   M._rules[rule.name] = rule
   return rule
 end
@@ -27,7 +25,9 @@ function M.get(name) return M._rules[name] end
 
 function M.list()
   local out = {}
-  for _, name in ipairs(M._order) do out[#out + 1] = M._rules[name] end
+  for _, name in ipairs(M._order) do
+    out[#out + 1] = M._rules[name]
+  end
   return out
 end
 
@@ -62,7 +62,8 @@ function M.evaluate(name, force)
     if not ok then
       vim.notify(
         ("workflow-assistant: action error in '%s': %s"):format(name, tostring(err)),
-        vim.log.levels.ERROR)
+        vim.log.levels.ERROR
+      )
     end
   end
 
@@ -71,7 +72,8 @@ function M.evaluate(name, force)
     M._evaluating[name] = nil
     vim.notify(
       ("workflow-assistant: condition error in '%s': %s"):format(name, tostring(err)),
-      vim.log.levels.ERROR)
+      vim.log.levels.ERROR
+    )
   end
 end
 
@@ -81,9 +83,7 @@ function M.evaluate_matching(kind, event_name, force)
     local rule = M._rules[name]
     if rule.trigger == kind then
       if kind == "event" then
-        if vim.tbl_contains(rule.events, event_name) then
-          M.evaluate(name, force)
-        end
+        if vim.tbl_contains(rule.events, event_name) then M.evaluate(name, force) end
       else
         M.evaluate(name, force)
       end

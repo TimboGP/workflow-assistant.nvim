@@ -1,10 +1,10 @@
 -- Public entry point. `require("workflow-assistant").setup{...}`
 local M = {}
 
-local config   = require("workflow-assistant.config")
-local state    = require("workflow-assistant.state")
-local actions  = require("workflow-assistant.actions")
-local engine   = require("workflow-assistant.engine")
+local config = require("workflow-assistant.config")
+local state = require("workflow-assistant.state")
+local actions = require("workflow-assistant.actions")
+local engine = require("workflow-assistant.engine")
 local triggers = require("workflow-assistant.triggers")
 local commands = require("workflow-assistant.commands")
 local builtins = require("workflow-assistant.rules")
@@ -19,8 +19,12 @@ function M.setup(opts)
   actions.setup(cfg)
   engine.setup(cfg)
 
-  for _, spec in ipairs(builtins.build(cfg)) do engine.register(spec) end
-  for _, spec in ipairs(cfg.custom_rules or {}) do engine.register(spec) end
+  for _, spec in ipairs(builtins.build(cfg)) do
+    engine.register(spec)
+  end
+  for _, spec in ipairs(cfg.custom_rules or {}) do
+    engine.register(spec)
+  end
 
   triggers.setup(cfg)
   commands.setup(M)
@@ -67,22 +71,28 @@ end
 
 function M.rule_names()
   local names = {}
-  for _, r in ipairs(engine.list()) do names[#names + 1] = r.name end
+  for _, r in ipairs(engine.list()) do
+    names[#names + 1] = r.name
+  end
   return names
 end
 
 function M.show_list()
   local lines = { "Workflow rules:" }
   for _, r in ipairs(engine.list()) do
-    lines[#lines + 1] = string.format("  %-22s [%s]%s %s",
-      r.name, r.trigger, r.enabled and "" or " (off)", r.desc)
+    lines[#lines + 1] =
+      string.format("  %-22s [%s]%s %s", r.name, r.trigger, r.enabled and "" or " (off)", r.desc)
   end
   actions.notify(table.concat(lines, "\n"))
 end
 
 function M.show_status()
-  actions.notify(("Workflow assistant: %s | %d rules registered"):format(
-    M.config.enabled and "on" or "off", #engine.list()))
+  actions.notify(
+    ("Workflow assistant: %s | %d rules registered"):format(
+      M.config.enabled and "on" or "off",
+      #engine.list()
+    )
+  )
 end
 
 return M

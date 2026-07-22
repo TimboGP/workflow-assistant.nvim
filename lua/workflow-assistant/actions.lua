@@ -49,8 +49,8 @@ end
 
 -- Best-effort "open a git UI" used by several rules.
 function M.open_git_status()
-  if pcall(vim.cmd, "Git") then return end     -- vim-fugitive
-  if pcall(vim.cmd, "Neogit") then return end  -- neogit
+  if pcall(vim.cmd, "Git") then return end -- vim-fugitive
+  if pcall(vim.cmd, "Neogit") then return end -- neogit
   M.notify("Open your git client to review changes.")
 end
 

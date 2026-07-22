@@ -2,8 +2,15 @@
 local M = {}
 
 local SUBS = {
-  "check", "enable", "disable", "toggle",
-  "list", "snooze", "reset", "status", "tested",
+  "check",
+  "enable",
+  "disable",
+  "toggle",
+  "list",
+  "snooze",
+  "reset",
+  "status",
+  "tested",
 }
 
 function M.setup(api)
@@ -11,7 +18,11 @@ function M.setup(api)
     local a = opts.fargs
     local sub = a[1]
     if sub == "check" then
-      if a[2] then api.check(a[2]) else api.check_all() end
+      if a[2] then
+        api.check(a[2])
+      else
+        api.check_all()
+      end
     elseif sub == "enable" then
       api.enable(true)
     elseif sub == "disable" then
@@ -31,9 +42,7 @@ function M.setup(api)
     elseif sub == "reset" then
       api.reset(a[2]) -- nil resets everything
     else
-      vim.notify(
-        "WorkflowAssistant: " .. table.concat(SUBS, "|"),
-        vim.log.levels.WARN)
+      vim.notify("WorkflowAssistant: " .. table.concat(SUBS, "|"), vim.log.levels.WARN)
     end
   end, {
     nargs = "*",
@@ -46,9 +55,7 @@ function M.setup(api)
         return vim.tbl_filter(function(s) return s:find(prefix, 1, true) == 1 end, SUBS)
       end
       -- Completing a rule name for check/snooze/reset.
-      if vim.tbl_contains({ "check", "snooze", "reset" }, parts[2]) then
-        return api.rule_names()
-      end
+      if vim.tbl_contains({ "check", "snooze", "reset" }, parts[2]) then return api.rule_names() end
       return {}
     end,
   })

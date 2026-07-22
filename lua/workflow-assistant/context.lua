@@ -8,18 +8,14 @@ local root_cache = {} -- cwd -> resolved root (false = "no project")
 function M.find_root(start, markers)
   start = start or vim.fn.getcwd()
   local cached = root_cache[start]
-  if cached ~= nil then
-    return cached or nil
-  end
+  if cached ~= nil then return cached or nil end
   local found = vim.fs.find(markers, { path = start, upward = true, limit = 1 })
   local root = (found and found[1]) and vim.fs.dirname(found[1]) or false
   root_cache[start] = root
   return root or nil
 end
 
-function M.clear_cache()
-  root_cache = {}
-end
+function M.clear_cache() root_cache = {} end
 
 function M.build(cfg)
   local cwd = vim.fn.getcwd()

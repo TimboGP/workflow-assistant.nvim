@@ -52,7 +52,9 @@ function M.wire_events()
   local events = {}
   for _, rule in ipairs(engine.list()) do
     if rule.trigger == "event" then
-      for _, ev in ipairs(rule.events) do events[ev] = true end
+      for _, ev in ipairs(rule.events) do
+        events[ev] = true
+      end
     end
   end
   local event_list = vim.tbl_keys(events)

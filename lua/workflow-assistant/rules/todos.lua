@@ -16,7 +16,7 @@ function M.rules(cfg)
       trigger = "timer",
       check_interval = 30 * 60,
       cooldown = 4 * 60 * 60, -- gentle: a few times a day at most
-      enabled = false,        -- opt-in via rules = { open_todos = true }
+      enabled = false, -- opt-in via rules = { open_todos = true }
       condition = function(ctx, done)
         if not have("rg") then return done(false) end
         local alt = table.concat(patterns, "|")
@@ -33,19 +33,19 @@ function M.rules(cfg)
         end)
       end,
       action = function(ctx, payload, rule)
-        actions.prompt(rule,
-          ("%d open TODO/FIXME marker(s)"):format(payload.count),
+        actions.prompt(rule, ("%d open TODO/FIXME marker(s)"):format(payload.count), {
           {
-            {
-              label = "List in quickfix",
-              run = function()
-                local alt = table.concat(patterns, "|")
-                local ok = pcall(vim.cmd, ("silent! grep! -e '(%s)' %s")
-                  :format(alt, vim.fn.fnameescape(ctx.root)))
-                if ok then pcall(vim.cmd, "copen") end
-              end,
-            },
-          })
+            label = "List in quickfix",
+            run = function()
+              local alt = table.concat(patterns, "|")
+              local ok = pcall(
+                vim.cmd,
+                ("silent! grep! -e '(%s)' %s"):format(alt, vim.fn.fnameescape(ctx.root))
+              )
+              if ok then pcall(vim.cmd, "copen") end
+            end,
+          },
+        })
       end,
     },
   }

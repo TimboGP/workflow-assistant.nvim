@@ -22,22 +22,24 @@ function M.run(cwd, args, cb)
 end
 
 function M.is_repo(cwd, cb)
-  M.run(cwd, { "rev-parse", "--is-inside-work-tree" }, function(ok, out)
-    cb(ok and out[1] == "true")
-  end)
+  M.run(
+    cwd,
+    { "rev-parse", "--is-inside-work-tree" },
+    function(ok, out) cb(ok and out[1] == "true") end
+  )
 end
 
 function M.branch(cwd, cb)
-  M.run(cwd, { "rev-parse", "--abbrev-ref", "HEAD" }, function(ok, out)
-    cb(ok and out[1] or nil)
-  end)
+  M.run(
+    cwd,
+    { "rev-parse", "--abbrev-ref", "HEAD" },
+    function(ok, out) cb(ok and out[1] or nil) end
+  )
 end
 
 -- Returns the porcelain lines (each = one changed/untracked entry), or nil.
 function M.status(cwd, cb)
-  M.run(cwd, { "status", "--porcelain" }, function(ok, out)
-    cb(ok and out or nil)
-  end)
+  M.run(cwd, { "status", "--porcelain" }, function(ok, out) cb(ok and out or nil) end)
 end
 
 -- Returns { ahead = n, behind = n } vs @{upstream}, or nil if no upstream.

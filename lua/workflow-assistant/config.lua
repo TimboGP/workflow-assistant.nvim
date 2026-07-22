@@ -34,15 +34,25 @@ M.defaults = {
 
   -- Tuning knobs consumed by built-in rule groups.
   git = {
-    commit_after = 60 * 60,   -- nag about a dirty tree once HEAD is older than this
+    commit_after = 60 * 60, -- nag about a dirty tree once HEAD is older than this
     fetch_interval = 30 * 60, -- how often review_incoming runs `git fetch`
-    auto_fetch = true,        -- review_incoming fetches before checking "behind"
+    auto_fetch = true, -- review_incoming fetches before checking "behind"
   },
   tests = {
-    filetypes = { "lua", "python", "go", "rust", "javascript", "typescript",
-      "java", "c", "cpp", "ruby" },
+    filetypes = {
+      "lua",
+      "python",
+      "go",
+      "rust",
+      "javascript",
+      "typescript",
+      "java",
+      "c",
+      "cpp",
+      "ruby",
+    },
     remind_after_writes = 10, -- writes since last test run before nudging
-    command = nil,            -- e.g. { "make", "test" }; enables a "Run tests" action
+    command = nil, -- e.g. { "make", "test" }; enables a "Run tests" action
   },
   todos = {
     patterns = { "TODO", "FIXME", "HACK", "XXX" },
@@ -53,8 +63,6 @@ M.defaults = {
   custom_rules = {},
 }
 
-function M.merge(user)
-  return vim.tbl_deep_extend("force", vim.deepcopy(M.defaults), user or {})
-end
+function M.merge(user) return vim.tbl_deep_extend("force", vim.deepcopy(M.defaults), user or {}) end
 
 return M
