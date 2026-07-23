@@ -17,6 +17,7 @@ function M.rules(cfg)
       trigger = "timer",
       check_interval = 5 * 60,
       cooldown = 45 * 60,
+      priority = "high", -- real risk of losing uncommitted work
       condition = function(ctx, done)
         git.is_repo(ctx.root, function(is)
           if not is then return done(false) end
@@ -67,6 +68,7 @@ function M.rules(cfg)
       trigger = "timer",
       check_interval = 5 * 60,
       cooldown = 30 * 60,
+      priority = "normal", -- already safe locally, just not backed up remotely
       condition = function(ctx, done)
         git.is_repo(ctx.root, function(is)
           if not is then return done(false) end
@@ -103,6 +105,7 @@ function M.rules(cfg)
       trigger = "timer",
       check_interval = cfg.git.fetch_interval,
       cooldown = cfg.git.fetch_interval,
+      priority = "normal", -- worth knowing, but doesn't block your current work
       condition = function(ctx, done)
         git.is_repo(ctx.root, function(is)
           if not is then return done(false) end

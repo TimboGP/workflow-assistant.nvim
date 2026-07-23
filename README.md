@@ -140,7 +140,7 @@ require("workflow-assistant").setup({
 
 | name                  | trigger | priority | fires when                                        |
 | --------------------- | ------- | -------- | -------------------------------------------------- |
-| `uncommitted_changes` | timer   | normal   | dirty tree + HEAD older than `git.commit_after`   |
+| `uncommitted_changes` | timer   | high     | dirty tree + HEAD older than `git.commit_after`   |
 | `unpushed_commits`    | timer   | normal   | local branch ahead of upstream                    |
 | `review_incoming`     | timer   | normal   | `git fetch`, then upstream is ahead of you        |
 | `count_source_writes` | event   | normal   | (bookkeeping only, `BufWritePost`)                |
