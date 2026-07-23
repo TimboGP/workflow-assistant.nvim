@@ -141,4 +141,14 @@ function M.show_status()
   )
 end
 
+--- Open the floating panel listing pending nudges and all registered rules.
+function M.panel() require("workflow-assistant.panel").open() end
+
+--- Short status string for a statusline/lualine component, e.g. "WA 3".
+--- Empty string when there's nothing pending, so it disappears cleanly.
+function M.statusline()
+  local n = state.inbox_count()
+  return n > 0 and ("WA " .. n) or ""
+end
+
 return M

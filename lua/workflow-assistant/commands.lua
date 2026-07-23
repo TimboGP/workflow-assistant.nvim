@@ -14,6 +14,7 @@ local SUBS = {
   "remind",
   "reminders",
   "unremind",
+  "panel",
 }
 
 function M.setup(api)
@@ -60,6 +61,8 @@ function M.setup(api)
       api.show_reminders()
     elseif sub == "unremind" then
       api.unremind(a[2])
+    elseif sub == "panel" then
+      api.panel()
     else
       vim.notify("WorkflowAssistant: " .. table.concat(SUBS, "|"), vim.log.levels.WARN)
     end

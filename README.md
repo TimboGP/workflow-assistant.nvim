@@ -38,6 +38,7 @@ Or manually: `require("workflow-assistant").setup({ ... })`.
 :WorkflowAssistant remind <duration> <message...>  -- e.g. remind 30m stand up
 :WorkflowAssistant reminders      -- list pending ad-hoc reminders
 :WorkflowAssistant unremind <id>  -- cancel a pending reminder
+:WorkflowAssistant panel          -- floating window: pending nudges + all rules
 :checkhealth workflow-assistant
 ```
 
@@ -57,6 +58,34 @@ A reminder's custom `actions` (see `reminders.add` in
 `lua/workflow-assistant/reminders.lua`) only apply within the session that
 created it — they're closures and can't be persisted to disk, so a reminder
 that outlives a restart falls back to a plain notification.
+
+## Notification inbox + panel
+
+A rule's nudge (`actions.prompt`) is normally a one-shot `vim.ui.select`
+popup — if you dismiss it with `<Esc>` or just don't look at the screen in
+time, it used to be gone for good. Now every prompt registers a pending
+entry (keyed by rule name, so a rule re-firing while its previous nudge is
+still unactioned replaces it rather than piling up duplicates) that stays
+queryable until you actually pick something:
+
+```
+:WorkflowAssistant panel
+```
+
+Opens a floating window listing pending nudges and every registered rule
+(trigger, enabled state, last fired, snoozed). Keymaps in the panel:
+
+| Key   | Action                                                        |
+| ----- | ------------------------------------------------------------- |
+| `<CR>`| pending: replay its choice menu; rule: force-check it now      |
+| `s`   | snooze the item/rule under the cursor for 30 minutes           |
+| `d`   | dismiss the pending item under the cursor                      |
+| `x`   | toggle enabled/disabled for the rule under the cursor           |
+| `q`   | close                                                          |
+
+For a statusline component (lualine, heirline, ...):
+`require("workflow-assistant").statusline()` returns e.g. `"WA 3"`, or an
+empty string when nothing's pending.
 
 ## Built-in rules
 
@@ -132,9 +161,12 @@ engine.lua      registry + per-rule evaluation (cooldown/snooze/check gates, pca
 rule.lua        spec validation/normalization
 triggers.lua    libuv timer + autocmds (schedules back onto the main loop)
 context.lua     project-root detection (cached) + session snapshot
-state.lua       last_fired/snoozed (persisted JSON) + last_checked (in-memory)
-actions.lua     notify / interactive prompt / async run_cmd
+state.lua       last_fired/snoozed + reminders (persisted JSON); last_checked +
+                notification inbox (in-memory)
+actions.lua     notify / interactive prompt (registers inbox entries) / async run_cmd
 git.lua         async git wrappers over vim.system
+reminders.lua   one-shot ad-hoc reminders (persisted, single scanning timer)
+panel.lua       :WorkflowAssistant panel — floating window over the inbox + rules
 rules/*.lua     built-in rule groups
 health.lua      :checkhealth
 ```

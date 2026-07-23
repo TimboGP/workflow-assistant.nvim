@@ -11,9 +11,14 @@ function M.notify(msg, level)
 end
 
 -- Interactive picker. `choices` = list of { label = string, run = function }.
--- "Snooze 30m" and "Dismiss" are appended automatically.
+-- "Snooze 30m" and "Dismiss" are appended automatically. Registers an inbox
+-- entry (see state.inbox_*) so the nudge stays visible in the panel /
+-- statusline() count until the user actually picks something — cancelling
+-- the prompt (e.g. <Esc>) leaves it pending rather than discarding it.
 function M.prompt(rule, msg, choices)
   choices = choices or {}
+  state.inbox_add(rule.name, msg, choices)
+
   local items, handlers = {}, {}
   for _, c in ipairs(choices) do
     items[#items + 1] = c.label
@@ -32,6 +37,7 @@ function M.prompt(rule, msg, choices)
     prompt = string.format("[%s] %s", _cfg.notify.title, msg),
   }, function(choice)
     if not choice then return end
+    state.inbox_remove(rule.name)
     local h = handlers[choice]
     if h then pcall(h) end
   end)
