@@ -1,0 +1,28 @@
+local duration = require("workflow-assistant.duration")
+
+describe("duration.parse", function()
+  it("parses seconds/minutes/hours/days", function()
+    assert.are.equal(90, duration.parse("90s"))
+    assert.are.equal(30 * 60, duration.parse("30m"))
+    assert.are.equal(2 * 60 * 60, duration.parse("2h"))
+    assert.are.equal(24 * 60 * 60, duration.parse("1d"))
+  end)
+
+  it("rejects an unknown unit", function()
+    local secs, err = duration.parse("30x")
+    assert.is_nil(secs)
+    assert.is_not_nil(err)
+  end)
+
+  it("rejects a non-numeric duration", function()
+    local secs, err = duration.parse("soon")
+    assert.is_nil(secs)
+    assert.is_not_nil(err)
+  end)
+
+  it("rejects a non-string input", function()
+    local secs, err = duration.parse(nil)
+    assert.is_nil(secs)
+    assert.is_not_nil(err)
+  end)
+end)

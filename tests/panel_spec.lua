@@ -1,6 +1,7 @@
 local state = require("workflow-assistant.state")
 local engine = require("workflow-assistant.engine")
 local panel = require("workflow-assistant.panel")
+local focus = require("workflow-assistant.focus")
 
 local function noop() end
 
@@ -8,6 +9,7 @@ local function fresh()
   state.setup({ state = { persist = false, path = "" } })
   state.reset()
   engine.setup({ rules = {}, default_cooldown = 60, tick_interval = 60, root_markers = {} })
+  focus.stop() -- module-local state can leak across specs; start unfocused
 end
 
 describe("panel.render", function()
@@ -54,6 +56,16 @@ describe("panel.render", function()
     assert.is_not_nil(pending_line)
     assert.is_not_nil(rule_line)
     assert.is_not_nil(rule_line:find("high", 1, true))
+  end)
+
+  it("shows a focus mode banner when active, and none when inactive", function()
+    local lines = panel.render()
+    assert.is_nil(lines[1]:match("^Focus mode"))
+
+    focus.start("10m")
+    lines = panel.render()
+    assert.is_not_nil(lines[1]:match("^Focus mode: on"))
+    focus.stop()
   end)
 end)
 

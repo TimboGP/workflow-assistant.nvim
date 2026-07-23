@@ -8,9 +8,10 @@
 --     events         = { "BufWritePost" },   -- for trigger == "event"
 --     cooldown       = 45 * 60,              -- min seconds between notifications
 --     check_interval = 5 * 60,              -- min seconds between condition runs
---     priority       = "low"|"normal"|"high", -- default "normal"; see config's
---                                              -- `interrupt_priority` and
---                                              -- actions.prompt
+--     priority       = "none"|"low"|"normal"|"high"|"critical", -- default
+--                                              -- "normal"; see config's
+--                                              -- `interrupt_priority`,
+--                                              -- actions.prompt, and focus.lua
 --     enabled        = true,
 --     condition      = function(ctx, done) done(should_fire, payload) end,
 --     action         = function(ctx, payload, rule) ... end,
@@ -42,7 +43,7 @@ function M.normalize(spec, cfg)
   local rule_priority = spec.priority or priority.DEFAULT
   assert(
     priority.is_valid(rule_priority),
-    "rule.priority must be 'low'|'normal'|'high' for " .. spec.name
+    "rule.priority must be 'none'|'low'|'normal'|'high'|'critical' for " .. spec.name
   )
 
   local rule = {

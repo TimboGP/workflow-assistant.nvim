@@ -2,6 +2,7 @@
 local M = {}
 local state = require("workflow-assistant.state")
 local priority = require("workflow-assistant.priority")
+local focus = require("workflow-assistant.focus")
 
 local _cfg
 
@@ -16,17 +17,24 @@ end
 -- inbox entry (see state.inbox_*) so the nudge stays visible in the panel /
 -- statusline() count until the user actually picks something.
 --
--- Below `cfg.interrupt_priority`, that's *all* that happens: a passive
--- notify plus the inbox entry — no vim.ui.select popup. The user opens
--- :WorkflowAssistant panel and hits <CR> on it whenever they get to it,
--- which replays this same choice menu. At or above the threshold, the
--- popup still shows immediately, same as before; cancelling it (e.g. <Esc>)
--- leaves the entry pending rather than discarding it.
+-- priority = "none" is a complete no-op: no notify, no inbox entry, nothing
+-- — see rules/tests.lua's count_source_writes for the rule this formalizes.
+--
+-- Otherwise, below the effective threshold (cfg.interrupt_priority, or
+-- "critical" while focus mode is active — see focus.lua), that's *all* that
+-- happens: a passive notify plus the inbox entry — no vim.ui.select popup.
+-- The user opens :WorkflowAssistant panel and hits <CR> on it whenever they
+-- get to it, which replays this same choice menu. At or above the
+-- threshold, the popup still shows immediately, same as before; cancelling
+-- it (e.g. <Esc>) leaves the entry pending rather than discarding it.
 function M.prompt(rule, msg, choices)
+  if rule.priority == "none" then return end
+
   choices = choices or {}
   state.inbox_add(rule.name, msg, choices, rule.priority)
 
-  if not priority.meets(rule.priority, _cfg.interrupt_priority) then
+  local threshold = focus.is_active() and "critical" or _cfg.interrupt_priority
+  if not priority.meets(rule.priority, threshold) then
     M.notify(("[%s] %s"):format(rule.name, msg))
     return
   end

@@ -115,7 +115,11 @@ end
 -- pending replaces that entry instead of stacking a second one.
 local priority = require("workflow-assistant.priority")
 
-local function notify_update()
+--- Fires the configured on_update hook (see config's `on_update`). Public
+--- so other modules whose state changes should also trigger it — e.g.
+--- focus.lua toggling — can reuse the same plumbing instead of each holding
+--- their own copy of `cfg.on_update`.
+function M.notify_update()
   if M._on_update then pcall(M._on_update) end
 end
 
@@ -128,14 +132,14 @@ function M.inbox_add(rule_name, message, actions, prio)
     actions = actions,
     priority = prio or priority.DEFAULT,
   }
-  notify_update()
+  M.notify_update()
 end
 
 --- Removing an entry that isn't there is a no-op and doesn't fire on_update.
 function M.inbox_remove(rule_name)
   if M._inbox[rule_name] == nil then return end
   M._inbox[rule_name] = nil
-  notify_update()
+  M.notify_update()
 end
 
 function M.inbox_get(rule_name) return M._inbox[rule_name] end

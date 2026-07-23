@@ -9,6 +9,7 @@ local triggers = require("workflow-assistant.triggers")
 local commands = require("workflow-assistant.commands")
 local builtins = require("workflow-assistant.rules")
 local reminders = require("workflow-assistant.reminders")
+local focus = require("workflow-assistant.focus")
 
 M.config = nil
 
@@ -144,11 +145,36 @@ end
 --- Open the floating panel listing pending nudges and all registered rules.
 function M.panel() require("workflow-assistant.panel").open() end
 
---- Short status string for a statusline/lualine component, e.g. "WA 3".
---- Empty string when there's nothing pending, so it disappears cleanly.
+--- Short status string for a statusline/lualine component, e.g. "WA 3" or
+--- "FOCUS 3". Empty string when there's nothing pending and focus mode is
+--- off, so it disappears cleanly; focus mode always shows something so
+--- there's a passive reminder it's on even with an empty inbox.
 function M.statusline()
   local n = state.inbox_count()
-  return n > 0 and ("WA " .. n) or ""
+  local focused = focus.is_active()
+  if not focused and n == 0 then return "" end
+  local label = focused and "FOCUS" or "WA"
+  return n > 0 and (label .. " " .. n) or label
 end
+
+--- Turn focus mode on. `duration_str` (e.g. "25m") is optional — omit for
+--- indefinite, until unfocus() is called. Only priority = "critical" rules
+--- still interrupt while it's active; everything else still notifies and
+--- lands in the inbox, same as being below interrupt_priority normally.
+function M.focus(duration_str)
+  local ok, err = focus.start(duration_str)
+  if not ok then
+    actions.notify("Invalid duration: " .. err, vim.log.levels.ERROR)
+    return
+  end
+  actions.notify(duration_str and ("Focus mode on for " .. duration_str .. ".") or "Focus mode on.")
+end
+
+function M.unfocus()
+  focus.stop()
+  actions.notify("Focus mode off.")
+end
+
+function M.is_focused() return focus.is_active() end
 
 return M

@@ -39,6 +39,8 @@ Or manually: `require("workflow-assistant").setup({ ... })`.
 :WorkflowAssistant reminders      -- list pending ad-hoc reminders
 :WorkflowAssistant unremind <id>  -- cancel a pending reminder
 :WorkflowAssistant panel          -- floating window: pending nudges + all rules
+:WorkflowAssistant focus [duration]  -- e.g. focus 25m, or bare `focus` for indefinite
+:WorkflowAssistant unfocus        -- end focus mode early, however it was started
 :checkhealth workflow-assistant
 ```
 
@@ -115,14 +117,25 @@ require("lualine").setup({
 
 ## Priority
 
-Not every nudge deserves to interrupt you. A rule's `priority` is
-`"low"|"normal"|"high"` (default `"normal"`); `cfg.interrupt_priority`
-(default `"normal"`) is the minimum that pops up the interactive
-`vim.ui.select` prompt. Below that threshold, `actions.prompt` still
-notifies (`vim.notify`) and still adds the pending entry to the inbox —
-it just skips the popup, so it never grabs focus. Open
+Not every nudge deserves to interrupt you. A rule's `priority` is one of:
+
+| Priority   | Behavior                                                          |
+| ---------- | ------------------------------------------------------------------ |
+| `none`     | Complete no-op — no notify, no popup, not even an inbox entry.     |
+| `low`      | Notify + inbox only, never interrupts.                            |
+| `normal`   | *(default)* Interrupts once `priority >= cfg.interrupt_priority`.  |
+| `high`     | Same rule as `normal`, just ranked above it.                      |
+| `critical` | The only priority that still interrupts during focus mode.        |
+
+`cfg.interrupt_priority` (default `"normal"`) is the minimum that pops up
+the interactive `vim.ui.select` prompt. Below that threshold, `actions.prompt`
+still notifies (`vim.notify`) and still adds the pending entry to the
+inbox — it just skips the popup, so it never grabs focus. Open
 `:WorkflowAssistant panel` and hit `<CR>` on it whenever you get to it to
-replay the exact same choice menu.
+replay the exact same choice menu. `priority = "none"` skips all of that —
+see `rules/tests.lua`'s `count_source_writes` for the rule this formalizes
+(its condition never actually fires, so it was always silent; `none` makes
+that an explicit, checkable contract instead of an implicit fact).
 
 ```lua
 require("workflow-assistant").setup({
@@ -134,7 +147,25 @@ require("workflow-assistant").setup({
 ```
 
 `tests_stale` and `open_todos` ship as `priority = "low"` — they're
-"deal with whenever," not "drop what you're doing."
+"deal with whenever," not "drop what you're doing." `uncommitted_changes`
+is `"high"` — real risk of losing work.
+
+## Focus mode
+
+Suppresses every nudge except `priority = "critical"` ones, regardless of
+`interrupt_priority` — everything else still notifies and lands in the
+inbox, exactly like being below the normal threshold.
+
+```
+:WorkflowAssistant focus 25m   -- on for 25 minutes, auto-expires
+:WorkflowAssistant focus       -- on indefinitely
+:WorkflowAssistant unfocus     -- off immediately, however it was started
+```
+
+`statusline()` shows `"FOCUS"` (or `"FOCUS 3"` with pending items) while
+active, so there's a passive reminder even with an empty inbox; the panel
+shows a `Focus mode: on (...)` banner at the top. From Lua:
+`require("workflow-assistant").focus("25m")` / `.unfocus()` / `.is_focused()`.
 
 ## Built-in rules
 
@@ -143,7 +174,7 @@ require("workflow-assistant").setup({
 | `uncommitted_changes` | timer   | high     | dirty tree + HEAD older than `git.commit_after`   |
 | `unpushed_commits`    | timer   | normal   | local branch ahead of upstream                    |
 | `review_incoming`     | timer   | normal   | `git fetch`, then upstream is ahead of you        |
-| `count_source_writes` | event   | normal   | (bookkeeping only, `BufWritePost`)                |
+| `count_source_writes` | event   | none     | (bookkeeping only, `BufWritePost`)                |
 | `tests_stale`         | timer   | low      | >= `tests.remind_after_writes` writes since tested|
 | `open_todos`          | timer   | low      | >= `todos.threshold` TODO/FIXME markers (opt-in)  |
 
@@ -163,7 +194,7 @@ require("workflow-assistant").setup({
       trigger = "timer",
       check_interval = 10 * 60,  -- how often the condition runs
       cooldown = 60 * 60,        -- min gap between notifications
-      priority = "normal",       -- "low"|"normal"|"high"; see Priority above
+      priority = "normal",       -- none|low|normal|high|critical; see Priority above
       condition = function(ctx, done)
         local git = require("workflow-assistant.git")
         git.branch(ctx.root, function(b)
@@ -209,12 +240,15 @@ init.lua        setup() + public API (also the command backend)
 config.lua      defaults + deep-merge
 engine.lua      registry + per-rule evaluation (cooldown/snooze/check gates, pcall isolation)
 rule.lua        spec validation/normalization
-priority.lua    named priority levels (low/normal/high) + threshold comparison
+priority.lua    named priority levels (none/low/normal/high/critical) + threshold comparison
+focus.lua       focus mode — forces the "critical" threshold while active
+duration.lua    "30m"/"2h"/"90s"/"1d" parsing, shared by reminders.lua + focus.lua
 triggers.lua    libuv timer + autocmds (schedules back onto the main loop)
 context.lua     project-root detection (cached) + session snapshot
 state.lua       last_fired/snoozed + reminders (persisted JSON); last_checked +
-                notification inbox (in-memory)
-actions.lua     notify / interactive prompt (registers inbox entries) / async run_cmd
+                notification inbox (in-memory); notify_update() for on_update
+actions.lua     notify / interactive prompt (registers inbox entries, applies
+                priority + focus mode gating) / async run_cmd
 git.lua         async git wrappers over vim.system
 reminders.lua   one-shot ad-hoc reminders (persisted, single scanning timer)
 panel.lua       :WorkflowAssistant panel — floating window over the inbox + rules

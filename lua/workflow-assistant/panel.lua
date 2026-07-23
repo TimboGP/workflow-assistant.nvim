@@ -8,6 +8,7 @@
 local M = {}
 local state = require("workflow-assistant.state")
 local engine = require("workflow-assistant.engine")
+local focus = require("workflow-assistant.focus")
 
 M._buf = nil
 M._win = nil
@@ -26,6 +27,13 @@ end
 function M.render()
   local lines = {}
   local index = {}
+
+  if focus.is_active() then
+    local remaining = focus.remaining()
+    lines[#lines + 1] = remaining and ("Focus mode: on (%ds left)"):format(remaining)
+      or "Focus mode: on (indefinite)"
+    lines[#lines + 1] = ""
+  end
 
   local pending = state.inbox_list()
   lines[#lines + 1] = ("Pending (%d)"):format(#pending)

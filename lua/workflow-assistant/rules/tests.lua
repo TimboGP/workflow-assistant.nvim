@@ -22,6 +22,7 @@ function M.rules(cfg)
       events = { "BufWritePost" },
       check_interval = 0,
       cooldown = 0,
+      priority = "none", -- formalizes the "never notifies" below
       condition = function(ctx, done)
         if vim.tbl_contains(src_ft, ctx.filetype) then
           M._writes_since_test = M._writes_since_test + 1

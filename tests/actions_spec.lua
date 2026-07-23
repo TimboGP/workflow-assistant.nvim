@@ -3,6 +3,7 @@
 -- a real global, not a whole module to swap out.
 local state = require("workflow-assistant.state")
 local actions = require("workflow-assistant.actions")
+local focus = require("workflow-assistant.focus")
 
 describe("actions.prompt", function()
   local orig_select
@@ -12,10 +13,14 @@ describe("actions.prompt", function()
     state.setup({ state = { persist = false, path = "" } })
     state.reset()
     actions.setup({ notify = { title = "Workflow", level = vim.log.levels.INFO } })
+    focus.stop() -- module-local state can leak across specs; start unfocused
     orig_select = vim.ui.select
   end)
 
-  after_each(function() vim.ui.select = orig_select end)
+  after_each(function()
+    vim.ui.select = orig_select
+    focus.stop()
+  end)
 
   it("adds an inbox entry for the rule as soon as the prompt opens", function()
     vim.ui.select = function() end -- never calls back: prompt stays "open"
@@ -105,6 +110,81 @@ describe("actions.prompt", function()
         cb(nil)
       end
       actions.prompt({ name = "r", priority = "low" }, "msg", {})
+      assert.is_true(selected)
+    end)
+  end)
+
+  describe("priority = 'none'", function()
+    it("is a complete no-op: no notify, no popup, no inbox entry", function()
+      local notified = false
+      local orig_notify = vim.notify
+      vim.notify = function() notified = true end
+      vim.ui.select = function() error("should not open the interactive prompt") end
+
+      actions.prompt({ name = "r", priority = "none" }, "msg", { { label = "x" } })
+      vim.notify = orig_notify
+
+      assert.is_false(notified)
+      assert.is_nil(state.inbox_get("r"))
+    end)
+
+    it("stays silent even at a permissive interrupt_priority", function()
+      actions.setup({
+        notify = { title = "Workflow", level = vim.log.levels.INFO },
+        interrupt_priority = "none",
+      })
+      vim.ui.select = function() error("should not open the interactive prompt") end
+      assert.has_no.errors(
+        function() actions.prompt({ name = "r", priority = "none" }, "msg", {}) end
+      )
+      assert.is_nil(state.inbox_get("r"))
+    end)
+  end)
+
+  describe("focus mode", function()
+    it("forces a normally-interrupting rule through the quiet path", function()
+      focus.start()
+      local selected = false
+      vim.ui.select = function() selected = true end
+      actions.prompt({ name = "r", priority = "high" }, "msg", {})
+      assert.is_false(selected)
+      assert.is_not_nil(state.inbox_get("r"))
+    end)
+
+    it("still lets a 'critical' rule interrupt", function()
+      focus.start()
+      local selected = false
+      vim.ui.select = function(_, _, cb)
+        selected = true
+        cb(nil)
+      end
+      actions.prompt({ name = "r", priority = "critical" }, "msg", {})
+      assert.is_true(selected)
+    end)
+
+    it("does not affect priority = 'none': still a complete no-op", function()
+      focus.start()
+      local notified = false
+      local orig_notify = vim.notify
+      vim.notify = function() notified = true end
+      vim.ui.select = function() error("should not open the interactive prompt") end
+
+      actions.prompt({ name = "r", priority = "none" }, "msg", {})
+      vim.notify = orig_notify
+
+      assert.is_false(notified)
+      assert.is_nil(state.inbox_get("r"))
+    end)
+
+    it("no longer forces the quiet path once focus mode ends", function()
+      focus.start()
+      focus.stop()
+      local selected = false
+      vim.ui.select = function(_, _, cb)
+        selected = true
+        cb(nil)
+      end
+      actions.prompt({ name = "r", priority = "high" }, "msg", {})
       assert.is_true(selected)
     end)
   end)

@@ -8,6 +8,7 @@
 local M = {}
 local state = require("workflow-assistant.state")
 local actions = require("workflow-assistant.actions")
+local duration = require("workflow-assistant.duration")
 
 local uv = vim.uv or vim.loop
 
@@ -16,17 +17,8 @@ M._cfg = nil
 M._counter = 0
 M._live_actions = {} -- id -> choices (in-memory only, current session)
 
-local UNITS = { s = 1, m = 60, h = 60 * 60, d = 24 * 60 * 60 }
-
 --- Parse "30m", "2h", "90s", "1d" -> seconds. Returns nil, err on failure.
-function M.parse_duration(str)
-  if type(str) ~= "string" then return nil, "duration must be a string" end
-  local n, unit = str:match("^(%d+)([smhd])$")
-  if not n then
-    return nil, ("invalid duration '%s' (expected e.g. 30m, 2h, 90s, 1d)"):format(str)
-  end
-  return tonumber(n) * UNITS[unit]
-end
+M.parse_duration = duration.parse
 
 local function next_id()
   M._counter = M._counter + 1

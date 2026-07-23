@@ -15,6 +15,8 @@ local SUBS = {
   "reminders",
   "unremind",
   "panel",
+  "focus",
+  "unfocus",
 }
 
 function M.setup(api)
@@ -63,6 +65,10 @@ function M.setup(api)
       api.unremind(a[2])
     elseif sub == "panel" then
       api.panel()
+    elseif sub == "focus" then
+      api.focus(a[2]) -- a[2] may be nil: indefinite
+    elseif sub == "unfocus" then
+      api.unfocus()
     else
       vim.notify("WorkflowAssistant: " .. table.concat(SUBS, "|"), vim.log.levels.WARN)
     end
