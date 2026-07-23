@@ -87,6 +87,32 @@ For a statusline component (lualine, heirline, ...):
 `require("workflow-assistant").statusline()` returns e.g. `"WA 3"`, or an
 empty string when nothing's pending.
 
+The inbox changes from a background timer, not a keypress, so a statusline
+plugin's own refresh events (e.g. lualine's `CursorMoved`) won't necessarily
+pick it up promptly. Set `on_update` in `setup()` to push a refresh whenever
+the inbox changes:
+
+```lua
+require("workflow-assistant").setup({
+  on_update = function() require("lualine").refresh() end,
+})
+```
+
+lualine example putting the count in its own section, hidden when empty:
+
+```lua
+require("lualine").setup({
+  sections = {
+    lualine_z = {
+      {
+        require("workflow-assistant").statusline,
+        cond = function() return require("workflow-assistant").statusline() ~= "" end,
+      },
+    },
+  },
+})
+```
+
 ## Built-in rules
 
 | name                  | trigger | fires when                                        |

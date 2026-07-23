@@ -62,6 +62,12 @@ M.defaults = {
     scan_interval = 30, -- how often the ad-hoc reminders scanner checks for due reminders
   },
 
+  -- Called whenever the notification inbox changes (a rule fires, or a
+  -- pending entry is acted on/dismissed/snoozed). Wire this to
+  -- `require("lualine").refresh()` (or similar) so a statusline() component
+  -- updates immediately instead of waiting for lualine's own refresh events.
+  on_update = nil,
+
   -- User-supplied rule specs (see README). Registered after built-ins.
   custom_rules = {},
 }

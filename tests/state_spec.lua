@@ -123,6 +123,46 @@ describe("state", function()
     end)
   end)
 
+  describe("on_update", function()
+    local function setup_with(fn)
+      state.setup(vim.tbl_extend("force", fresh_cfg(tmpfile), { on_update = fn }))
+    end
+
+    it("fires when an entry is added", function()
+      local calls = 0
+      setup_with(function() calls = calls + 1 end)
+      state.inbox_add("r", "msg", {})
+      assert.are.equal(1, calls)
+    end)
+
+    it("fires when an entry is removed", function()
+      local calls = 0
+      setup_with(function() calls = calls + 1 end)
+      state.inbox_add("r", "msg", {})
+      calls = 0
+      state.inbox_remove("r")
+      assert.are.equal(1, calls)
+    end)
+
+    it("does not fire when removing an entry that isn't there", function()
+      local calls = 0
+      setup_with(function() calls = calls + 1 end)
+      state.inbox_remove("nope")
+      assert.are.equal(0, calls)
+    end)
+
+    it("is contained: a throwing callback doesn't break the inbox mutation", function()
+      setup_with(function() error("boom") end)
+      assert.has_no.errors(function() state.inbox_add("r", "msg", {}) end)
+      assert.is_not_nil(state.inbox_get("r"))
+    end)
+
+    it("is a harmless no-op when unset", function()
+      state.setup(fresh_cfg(tmpfile))
+      assert.has_no.errors(function() state.inbox_add("r", "msg", {}) end)
+    end)
+  end)
+
   describe("reset", function()
     it("clears a single rule's state", function()
       state.mark_fired("a")

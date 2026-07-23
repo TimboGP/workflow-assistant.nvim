@@ -7,6 +7,7 @@ M._data = {} -- name -> { last_fired, snoozed_until }  (persisted)
 M._reminders = {} -- list of { id, due, message }        (persisted)
 M._mem = {} -- name -> { last_checked }               (in-memory)
 M._inbox = {} -- rule name -> { id, rule, message, ts, actions } (in-memory)
+M._on_update = nil -- fired whenever the inbox changes; see config's on_update
 M._cfg = nil
 
 local function entry(name)
@@ -22,6 +23,7 @@ function M.setup(cfg)
   M._cfg = cfg
   M._mem = {}
   M._inbox = {}
+  M._on_update = cfg.on_update
   if cfg.state.persist then M.load() end
 end
 
@@ -111,6 +113,10 @@ end
 -- Notification inbox (in-memory only) --------------------------------------
 -- Keyed by rule name, so a rule re-firing while its previous nudge is still
 -- pending replaces that entry instead of stacking a second one.
+local function notify_update()
+  if M._on_update then pcall(M._on_update) end
+end
+
 function M.inbox_add(rule_name, message, actions)
   M._inbox[rule_name] = {
     id = rule_name,
@@ -119,9 +125,15 @@ function M.inbox_add(rule_name, message, actions)
     ts = os.time(),
     actions = actions,
   }
+  notify_update()
 end
 
-function M.inbox_remove(rule_name) M._inbox[rule_name] = nil end
+--- Removing an entry that isn't there is a no-op and doesn't fire on_update.
+function M.inbox_remove(rule_name)
+  if M._inbox[rule_name] == nil then return end
+  M._inbox[rule_name] = nil
+  notify_update()
+end
 
 function M.inbox_get(rule_name) return M._inbox[rule_name] end
 
