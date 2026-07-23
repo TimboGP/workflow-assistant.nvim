@@ -8,7 +8,9 @@
 --     events         = { "BufWritePost" },   -- for trigger == "event"
 --     cooldown       = 45 * 60,              -- min seconds between notifications
 --     check_interval = 5 * 60,              -- min seconds between condition runs
---     priority       = 0,
+--     priority       = "low"|"normal"|"high", -- default "normal"; see config's
+--                                              -- `interrupt_priority` and
+--                                              -- actions.prompt
 --     enabled        = true,
 --     condition      = function(ctx, done) done(should_fire, payload) end,
 --     action         = function(ctx, payload, rule) ... end,
@@ -17,6 +19,7 @@
 -- `condition` MUST call `done` exactly once (sync or async). If it never does,
 -- the rule silently stops re-evaluating.
 local M = {}
+local priority = require("workflow-assistant.priority")
 
 function M.normalize(spec, cfg)
   assert(type(spec) == "table", "rule must be a table")
@@ -36,6 +39,12 @@ function M.normalize(spec, cfg)
     "rule.trigger must be 'timer'|'event'|'manual' for " .. spec.name
   )
 
+  local rule_priority = spec.priority or priority.DEFAULT
+  assert(
+    priority.is_valid(rule_priority),
+    "rule.priority must be 'low'|'normal'|'high' for " .. spec.name
+  )
+
   local rule = {
     name = spec.name,
     desc = spec.desc or "",
@@ -43,7 +52,7 @@ function M.normalize(spec, cfg)
     events = spec.events or {},
     cooldown = spec.cooldown or cfg.default_cooldown,
     check_interval = spec.check_interval or cfg.tick_interval,
-    priority = spec.priority or 0,
+    priority = rule_priority,
     condition = spec.condition,
     action = spec.action,
     enabled = true,

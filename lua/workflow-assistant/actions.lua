@@ -1,6 +1,7 @@
 -- Reusable side-effects rules can call from their `action` functions.
 local M = {}
 local state = require("workflow-assistant.state")
+local priority = require("workflow-assistant.priority")
 
 local _cfg
 
@@ -11,13 +12,24 @@ function M.notify(msg, level)
 end
 
 -- Interactive picker. `choices` = list of { label = string, run = function }.
--- "Snooze 30m" and "Dismiss" are appended automatically. Registers an inbox
--- entry (see state.inbox_*) so the nudge stays visible in the panel /
--- statusline() count until the user actually picks something — cancelling
--- the prompt (e.g. <Esc>) leaves it pending rather than discarding it.
+-- "Snooze 30m" and "Dismiss" are appended automatically. Always registers an
+-- inbox entry (see state.inbox_*) so the nudge stays visible in the panel /
+-- statusline() count until the user actually picks something.
+--
+-- Below `cfg.interrupt_priority`, that's *all* that happens: a passive
+-- notify plus the inbox entry — no vim.ui.select popup. The user opens
+-- :WorkflowAssistant panel and hits <CR> on it whenever they get to it,
+-- which replays this same choice menu. At or above the threshold, the
+-- popup still shows immediately, same as before; cancelling it (e.g. <Esc>)
+-- leaves the entry pending rather than discarding it.
 function M.prompt(rule, msg, choices)
   choices = choices or {}
-  state.inbox_add(rule.name, msg, choices)
+  state.inbox_add(rule.name, msg, choices, rule.priority)
+
+  if not priority.meets(rule.priority, _cfg.interrupt_priority) then
+    M.notify(("[%s] %s"):format(rule.name, msg))
+    return
+  end
 
   local items, handlers = {}, {}
   for _, c in ipairs(choices) do

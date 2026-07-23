@@ -32,6 +32,13 @@ M.defaults = {
   -- e.g. rules = { open_todos = true, review_incoming = false }
   rules = {},
 
+  -- Minimum rule priority ("low"|"normal"|"high") that interrupts with a
+  -- vim.ui.select prompt. A rule below this still notifies (vim.notify) and
+  -- lands in the inbox — see actions.prompt — you just have to open
+  -- :WorkflowAssistant panel and act on it yourself instead of being
+  -- interrupted immediately.
+  interrupt_priority = "normal",
+
   -- Tuning knobs consumed by built-in rule groups.
   git = {
     commit_after = 60 * 60, -- nag about a dirty tree once HEAD is older than this

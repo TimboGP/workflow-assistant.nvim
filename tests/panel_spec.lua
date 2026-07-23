@@ -35,6 +35,26 @@ describe("panel.render", function()
     assert.is_not_nil(found)
     assert.are.equal("r1", found.name)
   end)
+
+  it("shows each rule's priority and a pending item's priority", function()
+    engine.register({
+      name = "r1",
+      trigger = "timer",
+      condition = noop,
+      action = noop,
+      priority = "high",
+    })
+    state.inbox_add("r1", "dirty tree", {}, "high")
+    local lines = panel.render()
+    local rule_line, pending_line
+    for _, line in ipairs(lines) do
+      if line:match("^  r1%s+%[timer") then rule_line = line end
+      if line:match("^  r1%s+%[high") then pending_line = line end
+    end
+    assert.is_not_nil(pending_line)
+    assert.is_not_nil(rule_line)
+    assert.is_not_nil(rule_line:find("high", 1, true))
+  end)
 end)
 
 describe("panel.open (interactive)", function()

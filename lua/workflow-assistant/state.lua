@@ -6,7 +6,7 @@ local M = {}
 M._data = {} -- name -> { last_fired, snoozed_until }  (persisted)
 M._reminders = {} -- list of { id, due, message }        (persisted)
 M._mem = {} -- name -> { last_checked }               (in-memory)
-M._inbox = {} -- rule name -> { id, rule, message, ts, actions } (in-memory)
+M._inbox = {} -- rule name -> { id, rule, message, ts, actions, priority } (in-memory)
 M._on_update = nil -- fired whenever the inbox changes; see config's on_update
 M._cfg = nil
 
@@ -113,17 +113,20 @@ end
 -- Notification inbox (in-memory only) --------------------------------------
 -- Keyed by rule name, so a rule re-firing while its previous nudge is still
 -- pending replaces that entry instead of stacking a second one.
+local priority = require("workflow-assistant.priority")
+
 local function notify_update()
   if M._on_update then pcall(M._on_update) end
 end
 
-function M.inbox_add(rule_name, message, actions)
+function M.inbox_add(rule_name, message, actions, prio)
   M._inbox[rule_name] = {
     id = rule_name,
     rule = rule_name,
     message = message,
     ts = os.time(),
     actions = actions,
+    priority = prio or priority.DEFAULT,
   }
   notify_update()
 end

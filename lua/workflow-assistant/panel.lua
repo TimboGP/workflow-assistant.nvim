@@ -33,7 +33,7 @@ function M.render()
     lines[#lines + 1] = "  (none)"
   else
     for _, item in ipairs(pending) do
-      lines[#lines + 1] = ("  %-22s %s"):format(item.rule, item.message)
+      lines[#lines + 1] = ("  %-22s [%-6s] %s"):format(item.rule, item.priority, item.message)
       index[#lines] = { kind = "pending", name = item.rule }
     end
   end
@@ -41,9 +41,10 @@ function M.render()
   lines[#lines + 1] = ""
   lines[#lines + 1] = "Rules"
   for _, rule in ipairs(engine.list()) do
-    lines[#lines + 1] = ("  %-22s [%-6s] %-3s  fired:%-10s snoozed:%s"):format(
+    lines[#lines + 1] = ("  %-22s [%-6s] [%-6s] %-3s  fired:%-10s snoozed:%s"):format(
       rule.name,
       rule.trigger,
+      rule.priority,
       rule.enabled and "on" or "off",
       fmt_ago(state.last_fired(rule.name)),
       state.is_snoozed(rule.name) and "yes" or "no"

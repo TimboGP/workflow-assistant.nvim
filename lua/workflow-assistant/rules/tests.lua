@@ -37,6 +37,7 @@ function M.rules(cfg)
       trigger = "timer",
       check_interval = 60,
       cooldown = 20 * 60,
+      priority = "low", -- FYI, not urgent: notify + inbox, no interrupt
       condition = function(_, done)
         done(M._writes_since_test >= threshold, { writes = M._writes_since_test })
       end,

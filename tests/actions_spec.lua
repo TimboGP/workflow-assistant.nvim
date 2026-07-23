@@ -59,4 +59,53 @@ describe("actions.prompt", function()
     assert.are.equal(1, state.inbox_count())
     assert.are.equal("second", state.inbox_get("r").message)
   end)
+
+  describe("priority gating", function()
+    it("skips the interactive prompt for a rule below interrupt_priority", function()
+      local selected = false
+      vim.ui.select = function() selected = true end
+      actions.prompt({ name = "r", priority = "low" }, "msg", {})
+      assert.is_false(selected)
+    end)
+
+    it("still notifies and keeps the choices for a later manual act()", function()
+      local notified
+      local orig_notify = vim.notify
+      vim.notify = function(msg) notified = msg end
+      vim.ui.select = function() error("should not open the interactive prompt") end
+
+      actions.prompt({ name = "r", priority = "low" }, "dirty tree", { { label = "x" } })
+      vim.notify = orig_notify
+
+      assert.is_not_nil(notified)
+      assert.is_not_nil(notified:find("dirty tree", 1, true))
+      local entry = state.inbox_get("r")
+      assert.are.equal("low", entry.priority)
+      assert.are.equal(1, #entry.actions)
+    end)
+
+    it("still shows the interactive prompt at or above interrupt_priority", function()
+      local selected = false
+      vim.ui.select = function(_, _, cb)
+        selected = true
+        cb(nil)
+      end
+      actions.prompt({ name = "r", priority = "high" }, "msg", {})
+      assert.is_true(selected)
+    end)
+
+    it("honors a lowered interrupt_priority threshold", function()
+      actions.setup({
+        notify = { title = "Workflow", level = vim.log.levels.INFO },
+        interrupt_priority = "low",
+      })
+      local selected = false
+      vim.ui.select = function(_, _, cb)
+        selected = true
+        cb(nil)
+      end
+      actions.prompt({ name = "r", priority = "low" }, "msg", {})
+      assert.is_true(selected)
+    end)
+  end)
 end)

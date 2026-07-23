@@ -46,6 +46,27 @@ describe("rule.normalize", function()
     assert.are.equal(7, r.check_interval)
   end)
 
+  describe("priority resolution", function()
+    it("defaults to 'normal' when omitted", function()
+      local r = rule.normalize({ name = "x", condition = noop, action = noop }, cfg)
+      assert.are.equal("normal", r.priority)
+    end)
+
+    it("accepts an explicit valid priority", function()
+      local r =
+        rule.normalize({ name = "x", condition = noop, action = noop, priority = "high" }, cfg)
+      assert.are.equal("high", r.priority)
+    end)
+
+    it("rejects an invalid priority", function()
+      assert.has_error(
+        function()
+          rule.normalize({ name = "x", condition = noop, action = noop, priority = "urgent" }, cfg)
+        end
+      )
+    end)
+  end)
+
   describe("enabled resolution", function()
     it("defaults to true with no spec.enabled and no override", function()
       local r = rule.normalize({ name = "x", condition = noop, action = noop }, cfg)

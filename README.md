@@ -113,16 +113,39 @@ require("lualine").setup({
 })
 ```
 
+## Priority
+
+Not every nudge deserves to interrupt you. A rule's `priority` is
+`"low"|"normal"|"high"` (default `"normal"`); `cfg.interrupt_priority`
+(default `"normal"`) is the minimum that pops up the interactive
+`vim.ui.select` prompt. Below that threshold, `actions.prompt` still
+notifies (`vim.notify`) and still adds the pending entry to the inbox —
+it just skips the popup, so it never grabs focus. Open
+`:WorkflowAssistant panel` and hit `<CR>` on it whenever you get to it to
+replay the exact same choice menu.
+
+```lua
+require("workflow-assistant").setup({
+  interrupt_priority = "normal", -- raise to "high" to make even fewer things interrupt
+  custom_rules = {
+    { name = "...", priority = "low", ... }, -- FYI-only: notify + inbox, never interrupts
+  },
+})
+```
+
+`tests_stale` and `open_todos` ship as `priority = "low"` — they're
+"deal with whenever," not "drop what you're doing."
+
 ## Built-in rules
 
-| name                  | trigger | fires when                                        |
-| --------------------- | ------- | ------------------------------------------------- |
-| `uncommitted_changes` | timer   | dirty tree + HEAD older than `git.commit_after`   |
-| `unpushed_commits`    | timer   | local branch ahead of upstream                    |
-| `review_incoming`     | timer   | `git fetch`, then upstream is ahead of you        |
-| `count_source_writes` | event   | (bookkeeping only, `BufWritePost`)                |
-| `tests_stale`         | timer   | >= `tests.remind_after_writes` writes since tested|
-| `open_todos`          | timer   | >= `todos.threshold` TODO/FIXME markers (opt-in)  |
+| name                  | trigger | priority | fires when                                        |
+| --------------------- | ------- | -------- | -------------------------------------------------- |
+| `uncommitted_changes` | timer   | normal   | dirty tree + HEAD older than `git.commit_after`   |
+| `unpushed_commits`    | timer   | normal   | local branch ahead of upstream                    |
+| `review_incoming`     | timer   | normal   | `git fetch`, then upstream is ahead of you        |
+| `count_source_writes` | event   | normal   | (bookkeeping only, `BufWritePost`)                |
+| `tests_stale`         | timer   | low      | >= `tests.remind_after_writes` writes since tested|
+| `open_todos`          | timer   | low      | >= `todos.threshold` TODO/FIXME markers (opt-in)  |
 
 Disable any of them with `rules = { unpushed_commits = false }`.
 
@@ -140,6 +163,7 @@ require("workflow-assistant").setup({
       trigger = "timer",
       check_interval = 10 * 60,  -- how often the condition runs
       cooldown = 60 * 60,        -- min gap between notifications
+      priority = "normal",       -- "low"|"normal"|"high"; see Priority above
       condition = function(ctx, done)
         local git = require("workflow-assistant.git")
         git.branch(ctx.root, function(b)
@@ -185,6 +209,7 @@ init.lua        setup() + public API (also the command backend)
 config.lua      defaults + deep-merge
 engine.lua      registry + per-rule evaluation (cooldown/snooze/check gates, pcall isolation)
 rule.lua        spec validation/normalization
+priority.lua    named priority levels (low/normal/high) + threshold comparison
 triggers.lua    libuv timer + autocmds (schedules back onto the main loop)
 context.lua     project-root detection (cached) + session snapshot
 state.lua       last_fired/snoozed + reminders (persisted JSON); last_checked +

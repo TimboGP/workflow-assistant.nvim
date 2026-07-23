@@ -88,6 +88,16 @@ describe("state", function()
       assert.are.equal(1, #entry.actions)
     end)
 
+    it("defaults priority to 'normal' when omitted", function()
+      state.inbox_add("r", "msg", {})
+      assert.are.equal("normal", state.inbox_get("r").priority)
+    end)
+
+    it("stores an explicit priority", function()
+      state.inbox_add("r", "msg", {}, "low")
+      assert.are.equal("low", state.inbox_get("r").priority)
+    end)
+
     it("dedupes by rule name: re-adding replaces rather than stacks", function()
       state.inbox_add("r", "first", {})
       state.inbox_add("r", "second", {})

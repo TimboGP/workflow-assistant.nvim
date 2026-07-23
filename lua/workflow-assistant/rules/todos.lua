@@ -16,6 +16,7 @@ function M.rules(cfg)
       trigger = "timer",
       check_interval = 30 * 60,
       cooldown = 4 * 60 * 60, -- gentle: a few times a day at most
+      priority = "low", -- FYI, not urgent: notify + inbox, no interrupt
       enabled = false, -- opt-in via rules = { open_todos = true }
       condition = function(ctx, done)
         if not have("rg") then return done(false) end
